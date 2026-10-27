@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel Administrador - Sistema RAG | Ing. Edeblangel Vanegas</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <nav class="bg-blue-600 text-white p-4">
+        <div class="container mx-auto flex justify-between">
+            <h1 class="text-xl font-bold">Sistema RAG - Panel Administrador</h1>
+            <div>
+                <a href="/chat" class="mr-4 hover:underline">Chat</a>
+                <button onclick="logout()" class="hover:underline">Cerrar Sesión</button>
+            </div>
+        </div>
+    </nav>
+    <div class="container mx-auto mt-8 p-4">
+        <div class="bg-white p-8 rounded-lg shadow-md max-w-2xl mx-auto">
+            <h2 class="text-2xl font-bold mb-6 text-gray-800">Carga de Documentos</h2>
+            <p class="mb-4 text-gray-600">Arrastra y suelta archivos PDF o TXT aquí</p>
+            <div id="dropzone" class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 cursor-pointer">
+                <input type="file" id="fileInput" multiple accept=".pdf,.txt" class="hidden">
+                <p class="text-gray-500">Haz clic o arrastra archivos aquí</p>
+                <p class="text-xs text-gray-400 mt-2">Formatos soportados: PDF, TXT</p>
+            </div>
+            <div id="fileList" class="mt-4 space-y-2"></div>
+            <button id="uploadBtn" class="mt-4 w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 disabled:bg-gray-400">Cargar Documentos</button>
+            <div id="status" class="mt-4 text-center"></div>
+        </div>
+        <footer class="mt-8 text-center text-xs text-gray-500">Sistema RAG - Autor: Ing. Edeblangel Vanegas</footer>
+    </div>
+    <script src="/static/js/admin.js"></script>
+</body>
+</html>

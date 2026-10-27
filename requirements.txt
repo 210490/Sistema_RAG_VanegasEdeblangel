@@ -1,0 +1,26 @@
+# Framework Web & Servidor ASGI
+fastapi>=0.110.0
+uvicorn>=0.28.0
+python-multipart>=0.0.9
+pydantic>=2.6.0
+
+# Seguridad y Autenticación
+python-jose[cryptography]>=3.3.0
+passlib[bcrypt]>=1.7.4
+bcrypt>=4.0.1
+
+# Base de Datos ORM
+sqlalchemy>=2.0.28
+
+# Orquestación IA y LangChain
+langchain>=0.2.0
+langchain-community>=0.2.0
+langchain-core>=0.2.0
+langchain-google-genai>=1.0.0
+
+# Base de datos vectorial y procesamiento de documentos
+chromadb>=0.4.24
+pypdf>=4.1.0
+
+# Utilidades de entorno
+python-dotenv>=1.0.1
