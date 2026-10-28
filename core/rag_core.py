@@ -19,7 +19,9 @@ from chromadb.config import Settings
 
 class RAGCore:
     def __init__(self):
-        self.api_key = os.getenv("GEMINI_API_KEY")
+        self.api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+        if not self.api_key:
+            raise ValueError("API key required for Gemini Developer API. Provide api_key parameter or set GOOGLE_API_KEY/GEMINI_API_KEY environment variable.")
         self.embeddings = GoogleGenerativeAIEmbeddings(
             model="models/embedding-001", google_api_key=self.api_key
         )
