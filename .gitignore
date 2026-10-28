@@ -19,9 +19,14 @@ __pycache__/
 # Bases de datos y almacenamiento temporal
 *.db
 *.sqlite3
+*.db-journal
 /tmp/
-chroma_data/
+/data/
+/chroma/
+/chroma_data/
 storage/
+uploads/*.pdf
+uploads/*.txt
 
 # Vercel
 .vercel/
@@ -31,3 +36,5 @@ storage/
 .idea/
 *.swp
 *.swo
+Thumbs.db
+.DS_Store

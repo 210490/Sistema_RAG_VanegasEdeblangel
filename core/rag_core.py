@@ -28,7 +28,10 @@ class RAGCore:
             google_api_key=self.api_key,
             temperature=0.2,
         )
-        self.client = chromadb.Client(Settings(anonymized_telemetry=False))
+        data_dir = os.getenv("DATA_DIR") or os.getenv("RAILWAY_VOLUME_MOUNT_PATH") or "/data"
+        chroma_dir = os.path.join(data_dir, "chroma")
+        os.makedirs(chroma_dir, exist_ok=True)
+        self.client = chromadb.PersistentClient(path=chroma_dir, settings=Settings(anonymized_telemetry=False))
         self.collection_name = "rag_collection"
         try:
             self.collection = self.client.get_or_create_collection(self.collection_name)
@@ -36,6 +39,19 @@ class RAGCore:
             self.collection = self.client.create_collection(self.collection_name)
         self.vectorstore = None
         self.qa_chain = None
+        # Intentar reconstruir vectorstore si existe colección con datos
+        try:
+            from langchain_community.vectorstores import Chroma
+
+            if self.collection.count() > 0:
+                self.vectorstore = Chroma(
+                    client=self.client,
+                    collection_name=self.collection_name,
+                    embedding_function=self.embeddings,
+                )
+                self._build_qa_chain()
+        except Exception as e:
+            print(f"[WARN] No se pudo reconstruir vectorstore desde persistencia: {e}")
 
     def load_documents(self, file_paths: List[str]) -> List[Document]:
         documents = []

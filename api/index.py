@@ -50,6 +50,15 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), name="static")
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
+# Asegurar directorios persistentes
+data_dir = os.getenv("DATA_DIR") or os.getenv("RAILWAY_VOLUME_MOUNT_PATH") or "/data"
+try:
+    os.makedirs(data_dir, exist_ok=True)
+    os.makedirs(os.path.join(data_dir, "uploads"), exist_ok=True)
+    os.makedirs(os.path.join(data_dir, "chroma"), exist_ok=True)
+except Exception as e:
+    print(f"[WARN] Error creando directorios persistentes: {e}")
+
 
 class RegisterModel(BaseModel):
     nombre: str
@@ -150,7 +159,8 @@ async def upload_files(
     if not rag_core:
         raise HTTPException(status_code=500, detail="RAG Core no inicializado (verificar GEMINI_API_KEY)")
     
-    upload_dir = os.path.join(BASE_DIR, "uploads")
+    data_dir = os.getenv("DATA_DIR") or os.getenv("RAILWAY_VOLUME_MOUNT_PATH") or "/data"
+    upload_dir = os.path.join(data_dir, "uploads")
     os.makedirs(upload_dir, exist_ok=True)
     file_paths = []
     for file in files:
