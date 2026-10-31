@@ -16,7 +16,7 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from jose import JWTError
 
-from core.database import get_db, init_db
+from core.database import get_db, init_db, get_data_dir
 from core.auth import get_password_hash, verify_password, create_access_token, decode_access_token
 from models.user import User
 from core.rag_core import RAGCore
@@ -37,13 +37,28 @@ try:
 except Exception as e:
     print(f"Error init_db: {e}")
 
-# RAG Core singleton
+# RAG Core singleton con función helper para carga perezosa
 rag_core = None
 try:
     rag_core = RAGCore()
 except Exception as e:
-    print(f"Error init RAGCore: {e}")
+    print(f"[INFO] RAGCore se inicializará bajo demanda o cuando GEMINI_API_KEY esté disponible: {e}")
     rag_core = None
+
+
+def get_rag_core():
+    global rag_core
+    if rag_core is None:
+        try:
+            rag_core = RAGCore()
+        except Exception as e:
+            print(f"[ERROR] Falló inicialización de RAGCore: {e}")
+            raise HTTPException(
+                status_code=500,
+                detail=f"Motor RAG no inicializado. Asegúrese de haber configurado la variable de entorno GEMINI_API_KEY. Detalle: {str(e)}",
+            )
+    return rag_core
+
 
 # Static y templates
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -51,13 +66,13 @@ app.mount("/static", StaticFiles(directory=os.path.join(BASE_DIR, "static")), na
 templates = Jinja2Templates(directory=os.path.join(BASE_DIR, "templates"))
 
 # Asegurar directorios persistentes
-data_dir = os.getenv("DATA_DIR") or os.getenv("RAILWAY_VOLUME_MOUNT_PATH") or "/data"
+data_dir = get_data_dir()
 try:
     os.makedirs(data_dir, exist_ok=True)
     os.makedirs(os.path.join(data_dir, "uploads"), exist_ok=True)
     os.makedirs(os.path.join(data_dir, "chroma"), exist_ok=True)
 except Exception as e:
-    print(f"[WARN] Error creando directorios persistentes: {e}")
+    print(f"[WARN] Error creando directorios de datos: {e}")
 
 
 class RegisterModel(BaseModel):
@@ -81,27 +96,27 @@ class QueryModel(BaseModel):
 
 @app.get("/", response_class=HTMLResponse)
 async def root(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="login.html")
 
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_page(request: Request):
-    return templates.TemplateResponse("login.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="login.html")
 
 
 @app.get("/register", response_class=HTMLResponse)
 async def register_page(request: Request):
-    return templates.TemplateResponse("register.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="register.html")
 
 
 @app.get("/admin", response_class=HTMLResponse)
 async def admin_page(request: Request):
-    return templates.TemplateResponse("admin.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="admin.html")
 
 
 @app.get("/chat", response_class=HTMLResponse)
 async def chat_page(request: Request):
-    return templates.TemplateResponse("chat.html", {"request": request})
+    return templates.TemplateResponse(request=request, name="chat.html")
 
 
 @app.post("/api/auth/register")
@@ -156,10 +171,9 @@ async def upload_files(
 ):
     if current_user.categoria != "Administrador":
         raise HTTPException(status_code=403, detail="Solo administradores pueden cargar documentos")
-    if not rag_core:
-        raise HTTPException(status_code=500, detail="RAG Core no inicializado (verificar GEMINI_API_KEY)")
+    core = get_rag_core()
     
-    data_dir = os.getenv("DATA_DIR") or os.getenv("RAILWAY_VOLUME_MOUNT_PATH") or "/data"
+    data_dir = get_data_dir()
     upload_dir = os.path.join(data_dir, "uploads")
     os.makedirs(upload_dir, exist_ok=True)
     file_paths = []
@@ -172,8 +186,8 @@ async def upload_files(
         file_paths.append(file_path)
     
     try:
-        docs = rag_core.load_documents(file_paths)
-        num_chunks = rag_core.build_vectorstore(docs)
+        docs = core.load_documents(file_paths)
+        num_chunks = core.build_vectorstore(docs)
         return {"message": f"Documentos cargados exitosamente. {len(docs)} documentos, {num_chunks} chunks procesados."}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error al procesar documentos: {str(e)}")
@@ -181,10 +195,9 @@ async def upload_files(
 
 @app.post("/api/chat/query")
 async def chat_query(query: QueryModel, current_user: User = Depends(get_current_user)):
-    if not rag_core:
-        raise HTTPException(status_code=500, detail="RAG Core no inicializado (verificar GEMINI_API_KEY)")
+    core = get_rag_core()
     try:
-        result = rag_core.query(query.question)
+        result = core.query(query.question)
         return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error en consulta: {str(e)}")

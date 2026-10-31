@@ -15,6 +15,7 @@ from langchain_core.prompts import PromptTemplate
 
 import chromadb
 from chromadb.config import Settings
+from core.database import get_data_dir
 
 
 class RAGCore:
@@ -30,7 +31,7 @@ class RAGCore:
             google_api_key=self.api_key,
             temperature=0.2,
         )
-        data_dir = os.getenv("DATA_DIR") or os.getenv("RAILWAY_VOLUME_MOUNT_PATH") or "/data"
+        data_dir = get_data_dir()
         chroma_dir = os.path.join(data_dir, "chroma")
         os.makedirs(chroma_dir, exist_ok=True)
         self.client = chromadb.PersistentClient(path=chroma_dir, settings=Settings(anonymized_telemetry=False))
